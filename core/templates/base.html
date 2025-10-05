@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Social Bot Admin</title>
+  <!-- Tailwind CSS (optional but recommended for rapid UI) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-50">
+  <div x-data="app()" x-init="init()" class="min-h-screen">
+    {% block content %}{% endblock %}
+  </div>
+
+  <script>
+    function app() {
+      return {
+        // Global state
+        loading: false,
+        alerts: [],
+
+        // Methods
+        init() {
+          console.log("Alpine app initialized");
+        },
+
+        showAlert(message, type = 'info') {
+          this.alerts.push({ message, type, id: Date.now() });
+          setTimeout(() => {
+            this.alerts = this.alerts.filter(a => a.id !== Date.now());
+          }, 5000);
+        },
+
+        csrfToken() {
+          return document.querySelector('[name=csrfmiddlewaretoken]').value;
+        }
+      };
+    }
+  </script>
+
+  <!-- Alert Toasts -->
+  <template x-for="alert in alerts" :key="alert.id">
+    <div class="fixed top-4 right-4 p-4 rounded shadow-lg text-white"
+         :class="{
+           'bg-green-500': alert.type === 'success',
+           'bg-blue-500': alert.type === 'info',
+           'bg-yellow-500': alert.type === 'warning',
+           'bg-red-500': alert.type === 'error'
+         }"
+         x-text="alert.message">
+    </div>
+  </template>
+</body>
+</html>

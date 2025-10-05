@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="p-6">
+  <h1 class="text-2xl font-bold text-gray-800 mb-6">📊 Automation Dashboard</h1>
+
+  <!-- Stats Cards -->
+  <div x-data="{ devices: {{ devices.count }}, tasks: {{ tasks.count }} }" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <div class="bg-white p-4 rounded shadow">
+      <h3 class="text-gray-500">Total Devices</h3>
+      <p class="text-3xl font-bold text-green-600" x-text="devices"></p>
+    </div>
+    <div class="bg-white p-4 rounded shadow">
+      <h3 class="text-gray-500">Active Tasks</h3>
+      <p class="text-3xl font-bold text-blue-600" x-text="tasks"></p>
+    </div>
+  </div>
+
+  <!-- Task List with Toggle -->
+  <div class="bg-white rounded shadow overflow-hidden">
+    <table class="min-w-full divide-y">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-2 text-left">Platform</th>
+          <th class="px-4 py-2 text-left">URL</th>
+          <th class="px-4 py-2 text-left">Enabled</th>
+          <th class="px-4 py-2">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y" x-data="taskManager()">
+        {% for task in tasks %}
+        <tr x-data="{ enabled: {{ task.enabled|yesno:'true,false' }}, taskId: {{ task.id }} }">
+          <td class="px-4 py-2">{{ task.platform }}</td>
+          <td class="px-4 py-2 truncate max-w-xs">{{ task.url }}</td>
+          <td class="px-4 py-2">
+            <span x-text="enabled ? '✅ Enabled' : '❌ Disabled'"
+                  :class="enabled ? 'text-green-600' : 'text-red-600'"></span>
+          </td>
+          <td class="px-4 py-2">
+            <button @click="toggleTask(taskId)"
+                    class="text-sm px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600">
+              Toggle
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  function taskManager() {
+    return {
+      async toggleTask(taskId) {
+        this.$root.loading = true;
+        try {
+          const response = await fetch(`/api/tasks/${taskId}/toggle/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': this.csrfToken()
+            }
+          });
+          if (response.ok) {
+            // Toggle local state
+            const row = this.$el.closest('tr');
+            const state = row.__x.$data;
+            state.enabled = !state.enabled;
+            this.showAlert('Task updated successfully', 'success');
+          } else {
+            throw new Error('Failed to update task');
+          }
+        } catch (err) {
+          this.showAlert(err.message, 'error');
+        } finally {
+          this.$root.loading = false;
+        }
+      }
+    };
+  }
+</script>
+{% endblock %}
